@@ -6,15 +6,17 @@
   <meta name="robots" content="noindex, nofollow">
   <title>No Walls</title>
   <style>
-    :root { --bg: #fafafa; --fg: #1a1a1a; --muted: #666; --accent: #e64415; }
-    @media (prefers-color-scheme: dark) { :root { --bg: #161616; --fg: #eee; --muted: #aaa; } }
+    :root { --bg: #fafafa; --fg: #1a1a1a; --muted: #666; --accent: #e64415; --box: #fff1ec; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #161616; --fg: #eee; --muted: #aaa; --box: #2a1a14; } }
     body { margin: 0; background: var(--bg); color: var(--fg); font: 17px/1.5 system-ui, sans-serif; }
     main { max-width: 32rem; margin: 0 auto; padding: 48px 16px; }
     h1 { margin: 0 0 8px; }
     p { color: var(--muted); }
     .btn { display: block; margin: 32px 0; padding: 16px; border-radius: 12px; background: var(--accent);
            color: #fff; text-align: center; font-weight: 600; font-size: 19px; text-decoration: none; }
-    ol { padding-left: 20px; } li { margin: 8px 0; }
+    ol { padding-left: 20px; } li { margin: 10px 0; }
+    .note { padding: 12px 16px; border-radius: 12px; background: var(--box); color: var(--fg); }
+    [hidden] { display: none !important; }
     small { color: var(--muted); }
   </style>
 </head>
@@ -22,22 +24,53 @@
 <main>
   <h1>No Walls</h1>
   <p>Firefox-Erweiterung: Bei Artikeln hinter einer Paywall erscheint unten rechts ein Button
-     „Ganzer Artikel“, der die archivierte Version auf archive.is öffnet.</p>
+     „Ganzer Artikel“, der eine frei lesbare Version öffnet.</p>
 
-  <a class="btn" href="no-walls.xpi">In Firefox installieren</a>
+  <p class="note" id="not-firefox" hidden>Bitte diese Seite in <strong>Firefox</strong> öffnen –
+     andere Browser werden nicht unterstützt.</p>
 
-  <p><strong>So geht's</strong> (Firefox auf Android oder Desktop):</p>
-  <ol>
-    <li>Diese Seite in <strong>Firefox</strong> öffnen und auf den Button tippen.</li>
-    <li>Falls Firefox fragt, ob diese Seite Erweiterungen installieren darf: <em>Erlauben</em>.</li>
-    <li><em>Hinzufügen</em> bestätigen. Fertig – Updates kommen automatisch.</li>
-  </ol>
-  <p>Klappt das Antippen auf Android nicht: Datei herunterladen, dann in Firefox
-     <em>Einstellungen → Über Firefox</em>, 5× aufs Logo tippen, zurück in die Einstellungen →
-     <em>Add-on aus Datei installieren</em> und die heruntergeladene Datei wählen.</p>
-  <p><small>Chrome wird nicht unterstützt.</small> <small id="v"></small></p>
+  <!-- Desktop: Firefox installs straight from the link. -->
+  <section id="desktop">
+    <a class="btn" href="no-walls.xpi">In Firefox installieren</a>
+    <ol>
+      <li>Auf den Button klicken.</li>
+      <li>Falls Firefox fragt, ob diese Seite Erweiterungen installieren darf: <em>Erlauben</em>.</li>
+      <li><em>Hinzufügen</em> bestätigen. Fertig – Updates kommen automatisch.</li>
+    </ol>
+  </section>
+
+  <!-- Android: Firefox only downloads the file; it's installed from the settings. -->
+  <section id="android" hidden>
+    <a class="btn" href="no-walls.xpi" download>1. Herunterladen</a>
+    <ol>
+      <li>Auf den Button tippen und <em>Herunterladen</em> bestätigen.</li>
+      <li>Firefox-Menü <strong>⋮</strong> → <em>Einstellungen</em> → ganz unten
+          <em>Über Firefox</em> → <strong>5× auf das Firefox-Logo tippen</strong>
+          (nur beim ersten Mal nötig).</li>
+      <li>Zurück zu <em>Einstellungen</em> → <em>Add-on aus Datei installieren</em>.</li>
+      <li><code>no-walls.xpi</code> aus <em>Downloads</em> wählen und <em>Hinzufügen</em> bestätigen.</li>
+    </ol>
+    <p>Fertig – Updates kommen danach automatisch.</p>
+  </section>
+
+  <p><small id="v"></small></p>
 </main>
 <script>
+  const ua = navigator.userAgent;
+  if (/Android/i.test(ua)) {
+    document.getElementById("desktop").hidden = true;
+    document.getElementById("android").hidden = false;
+  }
+  const note = document.getElementById("not-firefox");
+  if (/iPhone|iPad|iPod/i.test(ua)) {
+    // Firefox on iOS doesn't support extensions.
+    document.getElementById("desktop").hidden = true;
+    note.textContent = "Auf iPhone und iPad leider nicht möglich – nur Firefox auf Android oder am Computer.";
+    note.hidden = false;
+  } else if (!/Firefox\//.test(ua)) {
+    note.hidden = false;
+  }
+
   fetch("updates.json").then(r => r.json()).then(j => {
     const u = Object.values(j.addons)[0].updates.at(-1);
     document.getElementById("v").textContent = "Version " + u.version;

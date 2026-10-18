@@ -1,10 +1,5 @@
 # No Walls
 
-Firefox extension (Android + desktop) that adds a "Ganzer Artikel" button to paywalled
-news articles. The button opens the newest snapshot on archive.is.
-
-Paywalls are detected via the schema.org flag `"isAccessibleForFree": false`.
-
 **Install:** https://d-rk.github.io/no-walls/ (password protected)
 
 ## Development

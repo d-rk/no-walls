@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "No Walls",
   "version": "0.1.0",
-  "description": "Adds an archive.is button to paywalled news articles.",
+  "description": "Firefox extension.",
   "browser_specific_settings": {
     "gecko": {
       "id": "no-walls@dirkwilden",

@@ -29,17 +29,33 @@
     });
   }
 
-  function addButton() {
+  function meta(attr, value) {
+    return document.querySelector(`meta[${attr}="${value}"]`)?.content;
+  }
+
+  // Medium articles, including publications on custom domains.
+  function isMediumArticle() {
+    const medium =
+      /(^|\.)medium\.com$/.test(location.hostname) ||
+      meta("property", "al:android:package") === "com.medium.reader" ||
+      meta("name", "twitter:app:name:iphone") === "Medium";
+    return medium && meta("property", "og:type") === "article";
+  }
+
+  function addButton(href) {
     if (document.getElementById("no-walls-btn")) return;
-    const url = location.origin + location.pathname; // drop tracking params / hash
     const a = document.createElement("a");
     a.id = "no-walls-btn";
-    // /newest/ redirects straight to the most recent snapshot, skipping the results list.
-    a.href = "https://archive.is/newest/" + url;
+    a.href = href;
     a.textContent = "Ganzer Artikel";
-    a.title = "Open on archive.is";
     document.body.appendChild(a);
   }
 
-  if (isPaywalled()) addButton();
+  const url = location.origin + location.pathname; // drop tracking params / hash
+  if (isMediumArticle()) {
+    addButton("https://freedium-mirror.cfd/" + url);
+  } else if (isPaywalled()) {
+    // /newest/ redirects straight to the most recent snapshot, skipping the results list.
+    addButton("https://archive.is/newest/" + url);
+  }
 })();
