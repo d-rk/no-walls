@@ -1,7 +1,5 @@
 # No Walls
 
-**Install:** https://d-rk.github.io/no-walls/ (password protected)
-
 ## Development
 
 ```
