@@ -6,42 +6,36 @@
   <meta name="robots" content="noindex, nofollow">
   <title>No Walls</title>
   <style>
-    :root { --bg: #fafafa; --fg: #1a1a1a; --muted: #666; --accent: #e64415; }
-    @media (prefers-color-scheme: dark) { :root { --bg: #161616; --fg: #eee; --muted: #aaa; } }
+    :root { --bg: #fafafa; --fg: #1a1a1a; --muted: #666; --accent: #e64415; --field: #fff; --line: #ccc; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #161616; --fg: #eee; --muted: #aaa; --field: #222; --line: #444; } }
     body { margin: 0; background: var(--bg); color: var(--fg); font: 17px/1.5 system-ui, sans-serif; }
     main { max-width: 32rem; margin: 0 auto; padding: 48px 16px; }
-    h1 { margin: 0 0 8px; }
-    p { color: var(--muted); }
-    .btn { display: block; margin: 32px 0; padding: 16px; border-radius: 12px; background: var(--accent);
-           color: #fff; text-align: center; font-weight: 600; font-size: 19px; text-decoration: none; }
-    ol { padding-left: 20px; } li { margin: 8px 0; }
-    small { color: var(--muted); }
+    input, button { box-sizing: border-box; width: 100%; padding: 14px; border-radius: 12px; font: inherit; }
+    input { margin: 24px 0 12px; border: 1px solid var(--line); background: var(--field); color: var(--fg); }
+    button { border: 0; background: var(--accent); color: #fff; font-weight: 600; }
+    #err { color: var(--accent); min-height: 1.5em; }
   </style>
 </head>
 <body>
 <main>
   <h1>No Walls</h1>
-  <p>Firefox-Erweiterung: Bei Artikeln hinter einer Paywall erscheint unten rechts ein Button
-     „Ganzer Artikel“, der die archivierte Version auf archive.is öffnet.</p>
-
-  <a class="btn" href="no-walls.xpi">In Firefox installieren</a>
-
-  <p><strong>So geht's</strong> (Firefox auf Android oder Desktop):</p>
-  <ol>
-    <li>Diese Seite in <strong>Firefox</strong> öffnen und auf den Button tippen.</li>
-    <li>Falls Firefox fragt, ob diese Seite Erweiterungen installieren darf: <em>Erlauben</em>.</li>
-    <li><em>Hinzufügen</em> bestätigen. Fertig – Updates kommen automatisch.</li>
-  </ol>
-  <p>Klappt das Antippen auf Android nicht: Datei herunterladen, dann in Firefox
-     <em>Einstellungen → Über Firefox</em>, 5× aufs Logo tippen, zurück in die Einstellungen →
-     <em>Add-on aus Datei installieren</em> und die heruntergeladene Datei wählen.</p>
-  <p><small>Chrome wird nicht unterstützt.</small> <small id="v"></small></p>
+  <form id="f">
+    <input id="pw" type="password" placeholder="Passwort" autocomplete="current-password" required autofocus>
+    <button>Weiter</button>
+    <p id="err"></p>
+  </form>
 </main>
 <script>
-  fetch("updates.json").then(r => r.json()).then(j => {
-    const u = Object.values(j.addons)[0].updates.at(-1);
-    document.getElementById("v").textContent = "Version " + u.version;
-  }).catch(() => {});
+  // The install page lives in a folder named after the password's SHA-256 hash.
+  document.getElementById("f").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const pw = document.getElementById("pw").value;
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pw));
+    const hash = [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+    const res = await fetch(hash + "/", { method: "HEAD" });
+    if (res.ok) location.href = hash + "/";
+    else document.getElementById("err").textContent = "Falsches Passwort.";
+  });
 </script>
 </body>
 </html>

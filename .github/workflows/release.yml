@@ -1,5 +1,7 @@
-# Push a tag like v0.2.0 to sign the extension (unlisted on AMO), attach it to a
-# GitHub release and update the install page + auto-update manifest on Pages.
+# Push a tag like v0.2.0 to sign the extension (unlisted on AMO) and publish it
+# behind the password gate on GitHub Pages. The install page, .xpi and
+# updates.json live in a folder named sha256(SITE_PASSWORD), so nothing
+# downloadable is reachable without the password.
 name: release
 
 on:
@@ -7,7 +9,7 @@ on:
     tags: ["v*"]
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -20,11 +22,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set version from tag
+      - name: Prepare manifest
+        env:
+          SITE_PASSWORD: ${{ secrets.SITE_PASSWORD }}
         run: |
+          test -n "$SITE_PASSWORD" || { echo "SITE_PASSWORD secret is missing"; exit 1; }
           VERSION="${GITHUB_REF_NAME#v}"
+          HASH=$(printf '%s' "$SITE_PASSWORD" | sha256sum | cut -d' ' -f1)
+          echo "::add-mask::$HASH"
+          BASE="https://d-rk.github.io/no-walls/$HASH"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          jq --arg v "$VERSION" '.version = $v' manifest.json > m.json && mv m.json manifest.json
+          echo "HASH=$HASH" >> "$GITHUB_ENV"
+          echo "BASE=$BASE" >> "$GITHUB_ENV"
+          jq --arg v "$VERSION" --arg u "$BASE/updates.json" \
+            '.version = $v | .browser_specific_settings.gecko.update_url = $u' \
+            manifest.json > m.json && mv m.json manifest.json
 
       - uses: actions/setup-node@v4
         with:
@@ -41,30 +53,16 @@ jobs:
             --api-secret="${{ secrets.AMO_JWT_SECRET }}"
           mv dist/*.xpi "dist/no-walls-$VERSION.xpi"
 
-      - name: Create GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "dist/no-walls-$VERSION.xpi" --title "No Walls $VERSION" --notes "Install: https://d-rk.github.io/no-walls/"
-
       - name: Build Pages site
         run: |
-          mkdir -p public
-          cp -r site/* public/
-          cp "dist/no-walls-$VERSION.xpi" public/no-walls.xpi
-          cat > public/updates.json <<EOF
-          {
-            "addons": {
-              "no-walls@dirkwilden": {
-                "updates": [
-                  {
-                    "version": "$VERSION",
-                    "update_link": "https://github.com/d-rk/no-walls/releases/download/$GITHUB_REF_NAME/no-walls-$VERSION.xpi"
-                  }
-                ]
-              }
-            }
-          }
-          EOF
+          mkdir -p "public/$HASH"
+          cp site/index.html site/robots.txt public/
+          cp site/install.html "public/$HASH/index.html"
+          cp "dist/no-walls-$VERSION.xpi" "public/$HASH/"
+          cp "dist/no-walls-$VERSION.xpi" "public/$HASH/no-walls.xpi"
+          jq -n --arg v "$VERSION" --arg l "$BASE/no-walls-$VERSION.xpi" \
+            '{addons: {"no-walls@dirkwilden": {updates: [{version: $v, update_link: $l}]}}}' \
+            > "public/$HASH/updates.json"
 
       - uses: actions/upload-pages-artifact@v3
         with:

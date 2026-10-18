@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>No Walls</title>
+  <style>
+    :root { --bg: #fafafa; --fg: #1a1a1a; --muted: #666; --accent: #e64415; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #161616; --fg: #eee; --muted: #aaa; } }
+    body { margin: 0; background: var(--bg); color: var(--fg); font: 17px/1.5 system-ui, sans-serif; }
+    main { max-width: 32rem; margin: 0 auto; padding: 48px 16px; }
+    h1 { margin: 0 0 8px; }
+    p { color: var(--muted); }
+    .btn { display: block; margin: 32px 0; padding: 16px; border-radius: 12px; background: var(--accent);
+           color: #fff; text-align: center; font-weight: 600; font-size: 19px; text-decoration: none; }
+    ol { padding-left: 20px; } li { margin: 8px 0; }
+    small { color: var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <h1>No Walls</h1>
+  <p>Firefox-Erweiterung: Bei Artikeln hinter einer Paywall erscheint unten rechts ein Button
+     „Ganzer Artikel“, der die archivierte Version auf archive.is öffnet.</p>
+
+  <a class="btn" href="no-walls.xpi">In Firefox installieren</a>
+
+  <p><strong>So geht's</strong> (Firefox auf Android oder Desktop):</p>
+  <ol>
+    <li>Diese Seite in <strong>Firefox</strong> öffnen und auf den Button tippen.</li>
+    <li>Falls Firefox fragt, ob diese Seite Erweiterungen installieren darf: <em>Erlauben</em>.</li>
+    <li><em>Hinzufügen</em> bestätigen. Fertig – Updates kommen automatisch.</li>
+  </ol>
+  <p>Klappt das Antippen auf Android nicht: Datei herunterladen, dann in Firefox
+     <em>Einstellungen → Über Firefox</em>, 5× aufs Logo tippen, zurück in die Einstellungen →
+     <em>Add-on aus Datei installieren</em> und die heruntergeladene Datei wählen.</p>
+  <p><small>Chrome wird nicht unterstützt.</small> <small id="v"></small></p>
+</main>
+<script>
+  fetch("updates.json").then(r => r.json()).then(j => {
+    const u = Object.values(j.addons)[0].updates.at(-1);
+    document.getElementById("v").textContent = "Version " + u.version;
+  }).catch(() => {});
+</script>
+</body>
+</html>
