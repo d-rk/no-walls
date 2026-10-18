@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "No Walls",
+  "version": "0.1.0",
+  "description": "Adds an archive.is button to paywalled news articles.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "no-walls@dirkwilden",
+      "strict_min_version": "128.0",
+      "update_url": "https://d-rk.github.io/no-walls/updates.json",
+      "data_collection_permissions": { "required": ["none"] }
+    },
+    "gecko_android": {
+      "strict_min_version": "128.0"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+# Push a tag like v0.2.0 to sign the extension (unlisted on AMO), attach it to a
+# GitHub release and update the install page + auto-update manifest on Pages.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set version from tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          jq --arg v "$VERSION" '.version = $v' manifest.json > m.json && mv m.json manifest.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sign with Mozilla (unlisted)
+        run: |
+          npx -y web-ext@8 sign \
+            --channel=unlisted \
+            --source-dir=. \
+            --ignore-files="site/**" ".github/**" "README.md" \
+            --artifacts-dir=dist \
+            --api-key="${{ secrets.AMO_JWT_ISSUER }}" \
+            --api-secret="${{ secrets.AMO_JWT_SECRET }}"
+          mv dist/*.xpi "dist/no-walls-$VERSION.xpi"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "dist/no-walls-$VERSION.xpi" --title "No Walls $VERSION" --notes "Install: https://d-rk.github.io/no-walls/"
+
+      - name: Build Pages site
+        run: |
+          mkdir -p public
+          cp -r site/* public/
+          cp "dist/no-walls-$VERSION.xpi" public/no-walls.xpi
+          cat > public/updates.json <<EOF
+          {
+            "addons": {
+              "no-walls@dirkwilden": {
+                "updates": [
+                  {
+                    "version": "$VERSION",
+                    "update_link": "https://github.com/d-rk/no-walls/releases/download/$GITHUB_REF_NAME/no-walls-$VERSION.xpi"
+                  }
+                ]
+              }
+            }
+          }
+          EOF
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

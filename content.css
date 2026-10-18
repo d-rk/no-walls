@@ -1,0 +1,13 @@
+#no-walls-btn {
+  position: fixed;
+  right: 16px;
+  bottom: 80px;
+  z-index: 2147483647;
+  padding: 12px 18px;
+  border-radius: 24px;
+  background: #e64415;
+  color: #fff !important;
+  font: 600 16px/1 system-ui, sans-serif;
+  text-decoration: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
